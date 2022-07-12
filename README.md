@@ -105,3 +105,47 @@ covid_vaccination
 # Difference% between first and second dose by province/region shows the percentage of partially vaccinated people overtime, i.e. the ratio of partially vaccinated to fully vaccinated
 covid_vaccination ['Difference%'] = covid_vaccination ['Difference per region'] / covid_vaccination ['Second Dose'] * 100
 covid_vaccination
+
+## 5) Assignment activity 5: External data 
+import pandas as pd
+import seaborn as sns
+pd.options.display.max_colwidth = 200
+sns.set(rc = {'figure.figsize':(15,10)})
+# Import the tweet data set
+tweets = pd.read_csv('tweets.csv')
+# Explore the data: info(), head()
+tweets.info()
+tweets.head()
+# Explore the structure, count the tweets, get the elements of interest
+tweets.retweet_count.value_counts()
+tweets.favorite_count.value_counts()
+# Create a DataFrame with the text only
+tweets['text'] = tweets['text'].astype(str)
+tweets_text = tweets['text'].apply(lambda x: x if x.strip() != None else None)
+### a. Identify the hashtags.
+# Loop through the messages and build a list of values containing the #-symbol
+tags = []
+for y in [x.split(' ') for x in tweets_text.values]:
+    for z in y:
+        if '#' in z:
+            tags.append(z)
+# Create a Series that counts the values in the list of values containing the #-symbol.
+tags = pd.Series(tags).value_counts()
+# Filter and sort
+# Display the first 30 records.
+tags.head(30)
+### b. Identify the top trending hashtags
+# Convert Series into a DataFrame
+data = pd.DataFrame(tags).reset_index()
+# Name the columns in the newly created Pandas DataFrame 
+data.columns = ['word', 'count']
+# Fix the data types in the newly created Pandas DataFrame 
+data['count'] = data['count'].astype(int)
+data
+# Display the records for the top trending hashtags with the count larger than 100
+display(data.loc[(data['count']>100)])
+# Plot
+# Display the data in a visualisation and identify the top trending hashtags related to COVID. 
+ax = sns.barplot(x="count",y="word", data=data.loc[(data['count']>100)], color = 'steelblue')
+fig = ax.get_figure()
+fig.savefig('twitter_hashtags.png')
