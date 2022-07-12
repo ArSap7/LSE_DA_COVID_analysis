@@ -105,3 +105,76 @@ covid_vaccination
 # Difference% between first and second dose by province/region shows the percentage of partially vaccinated people overtime, i.e. the ratio of partially vaccinated to fully vaccinated
 covid_vaccination ['Difference%'] = covid_vaccination ['Difference per region'] / covid_vaccination ['Second Dose'] * 100
 covid_vaccination
+
+## 6) Assignment activity 6: 
+# Libraries and settings
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+# Import additional libraries.
+from sklearn.metrics import r2_score, median_absolute_error, mean_absolute_error
+from sklearn.metrics import median_absolute_error, mean_squared_error, mean_squared_log_error
+# Load and select relevant subset of the data
+cov = pd.read_csv('covid_19_uk_cases.csv')
+vac = pd.read_csv('covid_19_uk_vaccinated.csv')
+sample = cov[['Province/State','Date','Hospitalised']]
+# Select data for a specific province
+sample_ci = sample[sample['Province/State'] == "Channel Islands"]
+# Define function to plot moving averages
+def plot_moving_average(series, window, plot_intervals=False, scale=1.96):
+    
+    # Create a rolling window to calculate the rolling mean using the series.rolling function
+    rolling_mean = series.rolling(window=window).mean()
+    
+    # Declare the dimensions for the plot, plot name and plot the data consisting of the rolling mean from above 
+    plt.figure(figsize=(18,4))
+    plt.title('Moving average\n window size = {}'.format(window))
+    plt.plot(rolling_mean, 'g', label='Simple moving average trend')
+
+    
+    # Plot confidence intervals for smoothed values
+    if plot_intervals:
+        
+        # Calculate the mean absolute square 
+        mae = mean_absolute_error(series[window:], rolling_mean[window:])
+        
+        # Calculate the standard deviation using numpy's std function
+        deviation = np.std(series[window:] - rolling_mean[window:])
+        
+        # Calculate the upper and lower bounds 
+        lower_bound = rolling_mean - (mae + scale * deviation)
+        upper_bound = rolling_mean + (mae + scale * deviation)
+        
+        # Name and style upper and lower bound lines and labels 
+        plt.plot(upper_bound, 'r--', label='Upper bound / Lower bound')
+        plt.plot(lower_bound, 'r--')
+    
+    # Plot the actual values for the entire timeframe
+    plt.plot(series[window:], label='Actual values')
+    plt.grid(True)
+# Define function to calculate the mean absolute error
+def mean_absolute_error(a, b): return abs(b - a)
+# Demonstrate the use of the function to plot moving averages.
+# View the DataFrame.
+print(sample_ci)
+sample_ci.head()
+# Plot the number of hospitalised individuals for the Channel Islands as a time series.
+ax = sample_ci.plot(figsize=(12, 4), color = 'steelblue')
+plt.legend(loc='best', fontsize = 14)
+plt.title('Time Series Plot for Channel Islands', fontsize = 16, fontweight = 'bold')
+plt.show(block=False)
+fig = ax.get_figure()
+fig.savefig('time_series_plot.png')
+# Remove missing values.
+sample_ci_na = sample_ci[sample_ci.isna().any(axis=1)]
+sample_ci_na.shape
+# Demonstrate the use of the function to plot moving averages
+# 7-days smoothing
+ax = plot_moving_average(sample_ci.Hospitalised, 7, plot_intervals=True)
+# Return the top three days with biggest difference between daily value and rolling 7-day mean
+s = sample_ci.copy()
+s_rolling = s['Hospitalised'].rolling(window=7).mean()
+s['error'] = mean_absolute_error(s['Hospitalised'][7:], s_rolling[7:])
+s.sort_values('error', ascending=False).head(3)
+
